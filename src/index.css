@@ -1,0 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-gray-800 font-sans antialiased;
+  }
+}
+
+/* Custom scrollbar for webkit */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #fbcfe8; /* brand-200 */
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #f472b6; /* brand-400 */
+}
+
+/* Base style overrides to make standard HTML elements look better */
+input, select {
+  @apply text-gray-800 placeholder-gray-400;
+}
