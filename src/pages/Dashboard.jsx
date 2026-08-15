@@ -81,15 +81,32 @@ export default function Dashboard() {
     if (tData) setTransactions(tData);
   };
 
-  const handleDeleteTransaction = async (txId) => {
+  const handleDeleteTransaction = async (tx) => {
     if (window.confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) {
-      const { error } = await supabase.from('transactions').delete().eq('id', txId);
+      const { error } = await supabase.from('transactions').delete().eq('id', tx.id);
       if (error) {
         alert('Gagal menghapus transaksi');
         console.error(error);
-      } else {
-        fetchData(user.id);
+        return;
       }
+
+      // Update wallet balance in Supabase
+      const { data: currentWallet } = await supabase
+        .from('wallets')
+        .select('balance')
+        .eq('id', tx.wallet_id)
+        .single();
+
+      if (currentWallet) {
+        const revertAmount = tx.type === 'expense' ? Number(tx.amount) : -Number(tx.amount);
+        const updatedBalance = Number(currentWallet.balance) + revertAmount;
+        await supabase
+          .from('wallets')
+          .update({ balance: updatedBalance })
+          .eq('id', tx.wallet_id);
+      }
+
+      fetchData(user.id);
     }
   };
 
@@ -445,7 +462,7 @@ export default function Dashboard() {
                         <Edit2 size={16} />
                       </button>
                       <button 
-                        onClick={() => handleDeleteTransaction(t.id)}
+                        onClick={() => handleDeleteTransaction(t)}
                         className="text-gray-400 hover:text-rose-500 p-1 rounded-md transition"
                         title="Hapus Transaksi"
                       >

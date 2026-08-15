@@ -88,6 +88,37 @@ export default function TransactionModal({ isOpen, onClose, wallets, user, trans
       if (transactionToEdit) {
         const { error: updateError } = await supabase.from('transactions').update(txData).eq('id', transactionToEdit.id);
         error = updateError;
+
+        if (!error) {
+          const oldWalletId = transactionToEdit.wallet_id;
+          const oldType = transactionToEdit.type;
+          const oldAmount = Number(transactionToEdit.amount);
+
+          const newWalletId = walletId;
+          const newType = type;
+          const newAmount = Number(amount);
+
+          if (oldWalletId === newWalletId) {
+            const { data: w } = await supabase.from('wallets').select('balance').eq('id', newWalletId).single();
+            if (w) {
+              const oldRevert = oldType === 'expense' ? oldAmount : -oldAmount;
+              const newApply = newType === 'expense' ? -newAmount : newAmount;
+              const finalBalance = Number(w.balance) + oldRevert + newApply;
+              await supabase.from('wallets').update({ balance: finalBalance }).eq('id', newWalletId);
+            }
+          } else {
+            const { data: wOld } = await supabase.from('wallets').select('balance').eq('id', oldWalletId).single();
+            if (wOld) {
+              const oldRevert = oldType === 'expense' ? oldAmount : -oldAmount;
+              await supabase.from('wallets').update({ balance: Number(wOld.balance) + oldRevert }).eq('id', oldWalletId);
+            }
+            const { data: wNew } = await supabase.from('wallets').select('balance').eq('id', newWalletId).single();
+            if (wNew) {
+              const newApply = newType === 'expense' ? -newAmount : newAmount;
+              await supabase.from('wallets').update({ balance: Number(wNew.balance) + newApply }).eq('id', newWalletId);
+            }
+          }
+        }
       } else {
         const { error: insertError } = await supabase.from('transactions').insert(txData);
         error = insertError;
