@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { X } from 'lucide-react';
 
-export default function TransactionModal({ isOpen, onClose, wallets, user, onSuccess }) {
+export default function TransactionModal({ isOpen, onClose, wallets, user, transactionToEdit, onSuccess }) {
   const [type, setType] = useState('expense');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
@@ -13,12 +13,40 @@ export default function TransactionModal({ isOpen, onClose, wallets, user, onSuc
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isOpen && wallets.length > 0) {
-      if (!walletId || !wallets.find(w => w.id === walletId)) {
-        setWalletId(wallets[0].id);
+    if (isOpen) {
+      if (transactionToEdit) {
+        setType(transactionToEdit.type);
+        setAmount(transactionToEdit.amount);
+        setDescription(transactionToEdit.description);
+        setWalletId(transactionToEdit.wallet_id);
+        
+        const defaultCategories = transactionToEdit.type === 'expense' 
+          ? ['Makanan', 'Transportasi', 'Belanja', 'Tagihan', 'Hiburan', 'Transfer Dompet', 'Lainnya']
+          : ['Gaji', 'Bonus', 'Investasi', 'Topup', 'Saldo Awal', 'Lainnya'];
+          
+        if (defaultCategories.includes(transactionToEdit.category)) {
+          setCategory(transactionToEdit.category);
+          setCustomCategory('');
+        } else {
+          setCategory('Lainnya');
+          setCustomCategory(transactionToEdit.category || '');
+        }
+        setDate(new Date(transactionToEdit.created_at).toISOString().split('T')[0]);
+      } else {
+        setType('expense');
+        setAmount('');
+        setDescription('');
+        setCategory('');
+        setCustomCategory('');
+        setDate(new Date().toISOString().split('T')[0]);
+        if (wallets.length > 0) {
+          if (!walletId || !wallets.find(w => w.id === walletId)) {
+            setWalletId(wallets[0].id);
+          }
+        }
       }
     }
-  }, [isOpen, wallets, walletId]);
+  }, [isOpen, transactionToEdit, wallets]);
 
   if (!isOpen) return null;
 
@@ -32,7 +60,7 @@ export default function TransactionModal({ isOpen, onClose, wallets, user, onSuc
     setLoading(true);
     
     try {
-      const { error } = await supabase.from('transactions').insert({
+      const txData = {
         user_id: user.id,
         wallet_id: walletId,
         type,
@@ -40,7 +68,16 @@ export default function TransactionModal({ isOpen, onClose, wallets, user, onSuc
         description,
         category: category === 'Lainnya' ? (customCategory || 'Lainnya') : category,
         created_at: new Date(date).toISOString()
-      });
+      };
+      
+      let error;
+      if (transactionToEdit) {
+        const { error: updateError } = await supabase.from('transactions').update(txData).eq('id', transactionToEdit.id);
+        error = updateError;
+      } else {
+        const { error: insertError } = await supabase.from('transactions').insert(txData);
+        error = insertError;
+      }
       
       if (error) throw error;
       onSuccess();
@@ -66,7 +103,7 @@ export default function TransactionModal({ isOpen, onClose, wallets, user, onSuc
           <X size={20} />
         </button>
         
-        <h2 className="text-2xl font-extrabold text-gray-800 mb-6">Tambah Transaksi</h2>
+        <h2 className="text-2xl font-extrabold text-gray-800 mb-6">{transactionToEdit ? 'Edit Transaksi' : 'Tambah Transaksi'}</h2>
         
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="flex bg-gray-50 rounded-2xl p-1 mb-6 border border-gray-100">

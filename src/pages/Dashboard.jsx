@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { 
   LogOut, Wallet, TrendingUp, TrendingDown, 
-  Plus, Sparkles, CreditCard, Activity, PieChart as PieChartIcon, UserCog
+  Plus, Sparkles, CreditCard, Activity, PieChart as PieChartIcon, UserCog, Edit2, Trash2
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -42,6 +42,7 @@ export default function Dashboard() {
   const [greeting, setGreeting] = useState('');
   const [dailyQuote, setDailyQuote] = useState('');
   const [visibleTxCount, setVisibleTxCount] = useState(10);
+  const [transactionToEdit, setTransactionToEdit] = useState(null);
   const chartScrollRef = useRef(null);
 
   useEffect(() => {
@@ -77,6 +78,18 @@ export default function Dashboard() {
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
     if (tData) setTransactions(tData);
+  };
+
+  const handleDeleteTransaction = async (txId) => {
+    if (window.confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) {
+      const { error } = await supabase.from('transactions').delete().eq('id', txId);
+      if (error) {
+        alert('Gagal menghapus transaksi');
+        console.error(error);
+      } else {
+        fetchData(user.id);
+      }
+    }
   };
 
   const totalBalance = wallets.reduce((acc, w) => acc + Number(w.balance), 0);
@@ -414,8 +427,31 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </div>
-                <div className={`font-extrabold ${t.type === 'income' ? 'text-emerald-500' : 'text-gray-900'}`}>
-                  {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
+                <div className="flex flex-col items-end gap-2">
+                  <div className={`font-extrabold ${t.type === 'income' ? 'text-emerald-500' : 'text-gray-900'}`}>
+                    {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
+                  </div>
+                  {viewingUser?.id === user.id && (
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => {
+                          setTransactionToEdit(t);
+                          setIsTxModalOpen(true);
+                        }}
+                        className="text-gray-400 hover:text-brand-500 p-1 rounded-md transition"
+                        title="Edit Transaksi"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteTransaction(t.id)}
+                        className="text-gray-400 hover:text-rose-500 p-1 rounded-md transition"
+                        title="Hapus Transaksi"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))
@@ -436,9 +472,13 @@ export default function Dashboard() {
 
       <TransactionModal 
         isOpen={isTxModalOpen} 
-        onClose={() => setIsTxModalOpen(false)} 
+        onClose={() => {
+          setIsTxModalOpen(false);
+          setTransactionToEdit(null);
+        }} 
         wallets={wallets} 
         user={user}
+        transactionToEdit={transactionToEdit}
         onSuccess={() => fetchData(user.id)}
       />
 
