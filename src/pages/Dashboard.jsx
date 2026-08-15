@@ -263,11 +263,11 @@ export default function Dashboard() {
 
           {/* Wallets List */}
           <div className="bg-white/60 backdrop-blur-xl rounded-3xl p-6 shadow-glass border border-white/80 flex-grow flex flex-col">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-lg text-gray-800">Dompet / Rekening</h3>
-              <div className="flex items-center gap-1.5">
+            <div className="flex justify-between items-center mb-6 gap-2">
+              <h3 className="font-bold text-base text-gray-800 truncate">Dompet / Rekening</h3>
+              <div className="flex items-center gap-1.5 shrink-0">
                 <button 
-                  className="p-2 text-gray-500 hover:text-brand-500 bg-gray-100/80 hover:bg-brand-50 rounded-full transition disabled:opacity-50"
+                  className="p-1.5 text-gray-500 hover:text-brand-500 bg-gray-100/80 hover:bg-brand-50 rounded-full transition disabled:opacity-50"
                   onClick={() => {
                     setWalletToEdit('manage');
                     setIsWalletModalOpen(true);
@@ -275,17 +275,17 @@ export default function Dashboard() {
                   disabled={viewingUser?.id !== user.id}
                   title="Edit atau Hapus Dompet"
                 >
-                  <Edit2 size={16} />
+                  <Edit2 size={15} />
                 </button>
                 <button 
-                  className="text-brand-400 hover:text-brand-500 font-semibold text-xs sm:text-sm flex items-center bg-brand-50 px-3 py-1.5 rounded-full transition disabled:opacity-50"
+                  className="text-brand-400 hover:text-brand-500 font-semibold text-xs flex items-center bg-brand-50 px-2.5 py-1.5 rounded-full transition disabled:opacity-50"
                   onClick={() => {
                     setWalletToEdit(null);
                     setIsWalletModalOpen(true);
                   }}
                   disabled={viewingUser?.id !== user.id}
                 >
-                  <Plus size={16} className="mr-1" /> Tambah
+                  <Plus size={14} className="mr-1" /> Tambah
                 </button>
               </div>
             </div>
@@ -294,44 +294,27 @@ export default function Dashboard() {
                 <p className="text-gray-400 text-sm text-center py-4">Belum ada dompet.</p>
               ) : (
                 wallets.map(w => (
-                  <div key={w.id} className="group flex justify-between items-center p-3 hover:bg-brand-50 rounded-2xl transition cursor-pointer border border-transparent hover:border-brand-100">
-                    <div className="flex items-center gap-4 min-w-0 pr-2">
-                      <div className="w-12 h-12 rounded-2xl bg-white shadow-sm border border-gray-100 text-brand-400 flex items-center justify-center shrink-0">
-                        <CreditCard size={20} />
+                  <div 
+                    key={w.id} 
+                    onClick={() => {
+                      if (viewingUser?.id === user.id) {
+                        setWalletToEdit(w);
+                        setIsWalletModalOpen(true);
+                      }
+                    }}
+                    className="flex justify-between items-center p-3 hover:bg-brand-50 rounded-2xl transition cursor-pointer border border-transparent hover:border-brand-100"
+                    title="Klik untuk edit / hapus dompet ini"
+                  >
+                    <div className="flex items-center gap-3 min-w-0 pr-2">
+                      <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-gray-100 text-brand-400 flex items-center justify-center shrink-0">
+                        <CreditCard size={18} />
                       </div>
                       <div className="min-w-0">
-                        <div className="font-semibold text-gray-800 truncate">{w.name}</div>
-                        <div className="text-xs text-gray-400 font-medium">Main Account</div>
+                        <div className="font-semibold text-sm text-gray-800 truncate">{w.name}</div>
+                        <div className="text-[11px] text-gray-400 font-medium">Main Account</div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <div className="font-bold text-gray-900">{formatCurrency(w.balance)}</div>
-                      {viewingUser?.id === user.id && (
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setWalletToEdit(w);
-                              setIsWalletModalOpen(true);
-                            }}
-                            className="p-1.5 text-gray-400 hover:text-brand-500 rounded-lg hover:bg-white shadow-xs transition"
-                            title="Edit Dompet"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteWallet(w);
-                            }}
-                            className="p-1.5 text-gray-400 hover:text-rose-500 rounded-lg hover:bg-white shadow-xs transition"
-                            title="Hapus Dompet"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    <div className="font-bold text-sm text-gray-900 shrink-0">{formatCurrency(w.balance)}</div>
                   </div>
                 ))
               )}
