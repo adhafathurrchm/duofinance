@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { X } from 'lucide-react';
 
@@ -11,6 +11,14 @@ export default function TransactionModal({ isOpen, onClose, wallets, user, onSuc
   const [customCategory, setCustomCategory] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && wallets.length > 0) {
+      if (!walletId || !wallets.find(w => w.id === walletId)) {
+        setWalletId(wallets[0].id);
+      }
+    }
+  }, [isOpen, wallets, walletId]);
 
   if (!isOpen) return null;
 
