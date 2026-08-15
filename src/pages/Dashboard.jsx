@@ -76,7 +76,8 @@ export default function Dashboard() {
       .from('transactions')
       .select('*, wallets(name)')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false });
     if (tData) setTransactions(tData);
   };
 

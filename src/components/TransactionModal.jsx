@@ -60,6 +60,20 @@ export default function TransactionModal({ isOpen, onClose, wallets, user, trans
     setLoading(true);
     
     try {
+      // Preserve exact time for accurate sorting
+      let finalDateTime;
+      const [year, month, day] = date.split('-');
+      
+      if (transactionToEdit) {
+        const origDate = new Date(transactionToEdit.created_at);
+        origDate.setFullYear(year, month - 1, day);
+        finalDateTime = origDate.toISOString();
+      } else {
+        const now = new Date();
+        now.setFullYear(year, month - 1, day);
+        finalDateTime = now.toISOString();
+      }
+
       const txData = {
         user_id: user.id,
         wallet_id: walletId,
@@ -67,7 +81,7 @@ export default function TransactionModal({ isOpen, onClose, wallets, user, trans
         amount: Number(amount),
         description,
         category: category === 'Lainnya' ? (customCategory || 'Lainnya') : category,
-        created_at: new Date(date).toISOString()
+        created_at: finalDateTime
       };
       
       let error;
