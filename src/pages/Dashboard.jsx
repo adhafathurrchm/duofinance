@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
+import { Link } from 'react-router-dom';
 import { 
   LogOut, Wallet, TrendingUp, TrendingDown, 
-  Plus, Sparkles, CreditCard, Activity, PieChart as PieChartIcon, UserCog, Edit2, Trash2
+  Plus, Sparkles, CreditCard, Activity, PieChart as PieChartIcon, UserCog, Edit2, Trash2, History
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -125,32 +126,38 @@ export default function Dashboard() {
     }
   };
 
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  // Filter transaksi khusus bulan berjalan
+  const currentMonthTransactions = transactions.filter(t => {
+    const tDate = new Date(t.created_at);
+    return tDate.getMonth() === currentMonth && tDate.getFullYear() === currentYear;
+  });
+
   const totalBalance = wallets.reduce((acc, w) => acc + Number(w.balance), 0);
-  const totalIncome = transactions
+  const totalIncome = currentMonthTransactions
     .filter(t => t.type === 'income' && !['Transfer Dompet', 'Topup'].includes(t.category))
     .reduce((acc, t) => acc + Number(t.amount), 0);
-  const totalExpense = transactions
+  const totalExpense = currentMonthTransactions
     .filter(t => t.type === 'expense' && !['Transfer Dompet', 'Topup', 'Saldo Awal'].includes(t.category))
     .reduce((acc, t) => acc + Number(t.amount), 0);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
   };
-
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth();
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   
   const chartData = [];
   for (let i = 1; i <= daysInMonth; i++) {
     const d = new Date(currentYear, currentMonth, i);
     const dateStr = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
     
-    const dayTx = transactions.filter(t => {
+    const dayTx = currentMonthTransactions.filter(t => {
       if (['Transfer Dompet', 'Topup', 'Saldo Awal'].includes(t.category)) return false;
       const tDate = new Date(t.created_at);
-      return tDate.getDate() === i && tDate.getMonth() === currentMonth && tDate.getFullYear() === currentYear;
+      return tDate.getDate() === i;
     });
     
     const income = dayTx.filter(t => t.type === 'income').reduce((acc, t) => acc + Number(t.amount), 0);
@@ -173,7 +180,7 @@ export default function Dashboard() {
     }
   }, [chartData]);
 
-  const expenseByCategory = transactions
+  const expenseByCategory = currentMonthTransactions
     .filter(t => t.type === 'expense' && !['Transfer Dompet', 'Topup', 'Saldo Awal'].includes(t.category))
     .reduce((acc, t) => {
       acc[t.category || 'Lainnya'] = (acc[t.category || 'Lainnya'] || 0) + Number(t.amount);
@@ -198,9 +205,19 @@ export default function Dashboard() {
       <div className="relative z-10 w-full max-w-[100vw] overflow-hidden">
       {/* Top Navigation Bar */}
       <nav className="flex flex-wrap gap-4 justify-between items-center bg-white/60 backdrop-blur-xl px-4 md:px-6 py-4 rounded-3xl mb-8 shadow-glass border border-white/80">
-          <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="DuoFinance" className="h-10 w-auto object-contain drop-shadow-sm" />
-            <span className="text-xl font-bold text-gray-800">DuoFinance</span>
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+            <div className="flex items-center gap-2">
+              <img src="/logo.png" alt="DuoFinance" className="h-10 w-auto object-contain drop-shadow-sm" />
+              <span className="text-xl font-bold text-gray-800">DuoFinance</span>
+            </div>
+            <div className="flex items-center gap-1 bg-gray-100/80 p-1 rounded-full text-xs font-semibold">
+              <Link to="/" className="px-3.5 py-1.5 rounded-full bg-white text-brand-500 shadow-sm flex items-center gap-1.5 transition">
+                <Activity size={14} /> Dashboard
+              </Link>
+              <Link to="/history" className="px-3.5 py-1.5 rounded-full text-gray-500 hover:text-gray-800 transition flex items-center gap-1.5">
+                <History size={14} /> Riwayat Bulanan
+              </Link>
+            </div>
           </div>
         
         <div className="flex items-center gap-2 sm:gap-4 ml-auto">
